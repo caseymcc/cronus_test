@@ -82,19 +82,40 @@ fi
 
 echo -e "${BLUE}Test workspace baseline: ${BASELINE_COMMIT:0:8}${NC}"
 
+# Helper: reset the workspace to baseline while preserving this script.
+# The baseline commit (first commit) doesn't contain setup.sh, README, or
+# .cronus/, so we must save them before reset and restore after.
+reset_to_baseline()
+{
+    # Save files that live outside the baseline commit
+    local tmpdir
+    tmpdir=$(mktemp -d)
+    cp "$SCRIPT_DIR/setup.sh" "$tmpdir/setup.sh"
+    [ -f "$SCRIPT_DIR/README.md" ] && cp "$SCRIPT_DIR/README.md" "$tmpdir/README.md"
+
+    # Clean up any Cronus runtime state (stale locks, etc.)
+    rm -rf "$SCRIPT_DIR/.cronus"
+
+    # Discard uncommitted changes and untracked files
+    git checkout -- . 2>/dev/null || true
+    git clean -fd 2>/dev/null || true
+
+    # Switch to main and hard-reset to baseline
+    git checkout main 2>/dev/null || git checkout -b main
+    git reset --hard "$BASELINE_COMMIT"
+
+    # Restore preserved files
+    cp "$tmpdir/setup.sh" "$SCRIPT_DIR/setup.sh"
+    chmod +x "$SCRIPT_DIR/setup.sh"
+    [ -f "$tmpdir/README.md" ] && cp "$tmpdir/README.md" "$SCRIPT_DIR/README.md"
+    rm -rf "$tmpdir"
+}
+
 # Full clean mode: discard everything
 if [ $CLEAN -eq 1 ]; then
     echo -e "${YELLOW}Full reset: discarding all changes and non-main branches...${NC}"
 
-    # Discard any uncommitted changes
-    git checkout -- . 2>/dev/null || true
-    git clean -fd 2>/dev/null || true
-
-    # Switch to main
-    git checkout main 2>/dev/null || git checkout -b main
-
-    # Reset main to baseline
-    git reset --hard "$BASELINE_COMMIT"
+    reset_to_baseline
 
     # Delete all other branches
     for branch in $(git branch --format='%(refname:short)' | grep -v '^main$'); do
@@ -111,13 +132,7 @@ if [ -z "$BRANCH_NAME" ]; then
     BRANCH_NAME="agent/session-$TIMESTAMP"
 fi
 
-# Discard uncommitted changes
-git checkout -- . 2>/dev/null || true
-git clean -fd 2>/dev/null || true
-
-# Switch to main and ensure it's at baseline
-git checkout main 2>/dev/null || git checkout -b main
-git reset --hard "$BASELINE_COMMIT"
+reset_to_baseline
 
 # Create and switch to the working branch
 if git rev-parse --verify "$BRANCH_NAME" >/dev/null 2>&1; then
