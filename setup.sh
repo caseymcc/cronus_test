@@ -67,6 +67,11 @@ if [ ! -d ".git" ]; then
     exit 1
 fi
 
+# Mark this directory as safe for git (needed when running inside Docker
+# as root, where the repo files are owned by the host user)
+git config --global --get-all safe.directory 2>/dev/null | grep -qxF "$SCRIPT_DIR" \
+    || git config --global --add safe.directory "$SCRIPT_DIR"
+
 # Get the baseline commit (first commit on main)
 BASELINE_COMMIT=$(git rev-list --max-parents=0 HEAD 2>/dev/null || echo "")
 
