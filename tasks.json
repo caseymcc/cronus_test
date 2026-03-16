@@ -1,0 +1,60 @@
+{
+    "description": "Known test tasks for the inventory_manager C++ project. These are used to test Cronus agent capabilities: bug fixing, feature implementation, and refactoring.",
+    "tasks": [
+        {
+            "id": "bug-remove-total-count",
+            "type": "bug_fix",
+            "title": "removeItem does not update total item count",
+            "description": "Inventory::removeItem() erases the item from the vector but does not subtract the item's quantity from m_totalCount. After removing an item, getTotalItemCount() returns a value that includes the removed item's quantity.",
+            "files": ["src/inventory.cpp"],
+            "test_command": "cd build && ctest --test-command ./inventory_tests --output-on-failure -R RemoveItem",
+            "expected_fix": "In removeItem(), before erasing the iterator, subtract it->quantity from m_totalCount.",
+            "difficulty": "easy",
+            "failing_tests": ["RemoveItemUpdatesTotalCount", "RemoveItemTotalValueUpdated"]
+        },
+        {
+            "id": "bug-category-case-sensitive",
+            "type": "bug_fix",
+            "title": "findItemsByCategory is case-sensitive",
+            "description": "Inventory::findItemsByCategory() compares the category string directly instead of using case-insensitive comparison. Searching for 'electronics' does not find items with category 'Electronics'. The toLower() helper already exists but is not being used in this method.",
+            "files": ["src/inventory.cpp"],
+            "test_command": "cd build && ctest --test-command ./inventory_tests --output-on-failure -R FindByCategory",
+            "expected_fix": "Use toLower() on both the search category and item.category before comparing.",
+            "difficulty": "easy",
+            "failing_tests": ["FindByCategoryCaseInsensitive"]
+        },
+        {
+            "id": "feature-low-stock",
+            "type": "feature",
+            "title": "Add getLowStockItems(threshold) method",
+            "description": "Add a new method getLowStockItems(int threshold) to the Inventory class that returns a vector of items whose quantity is below the given threshold. This is useful for generating reorder alerts. The method signature should be: std::vector<Item> getLowStockItems(int threshold) const. Uncomment the corresponding tests in tests/inventoryTest.cpp.",
+            "files": ["include/inventory.h", "src/inventory.cpp", "tests/inventoryTest.cpp"],
+            "test_command": "cd build && ctest --test-command ./inventory_tests --output-on-failure -R LowStock",
+            "expected_fix": "Add the method declaration to inventory.h, implement it in inventory.cpp by iterating m_items and collecting those with quantity < threshold, uncomment the test cases.",
+            "difficulty": "easy",
+            "failing_tests": ["GetLowStockItems", "GetLowStockItemsNone", "GetLowStockItemsEmpty"]
+        },
+        {
+            "id": "feature-json-serialization",
+            "type": "feature",
+            "title": "Add JSON serialization (toJson/fromJson)",
+            "description": "Add toJson() and fromJson() methods to the Inventory class for persistence. toJson() should return a JSON string representing all items as an array of objects with fields: name, category, quantity, price. fromJson(const std::string&) should parse a JSON string and populate the inventory, returning true on success. Use only standard C++ (no external JSON library) — manual string building and basic parsing is fine for this small project. Uncomment the corresponding tests in tests/inventoryTest.cpp.",
+            "files": ["include/inventory.h", "src/inventory.cpp", "tests/inventoryTest.cpp"],
+            "test_command": "cd build && ctest --test-command ./inventory_tests --output-on-failure -R Json",
+            "expected_fix": "Add method declarations to inventory.h, implement serialization in inventory.cpp, uncomment the test cases.",
+            "difficulty": "medium",
+            "failing_tests": ["ToJson", "FromJson", "FromJsonEmpty", "FromJsonInvalid"]
+        },
+        {
+            "id": "refactor-extract-string-utils",
+            "type": "refactor",
+            "title": "Extract string utilities into separate module",
+            "description": "The Inventory class currently has private static helper methods toLower() and trim() embedded directly in inventory.h/cpp. These are general-purpose string utilities that should be extracted into their own module (include/stringUtils.h and src/stringUtils.cpp) as free functions in a StringUtils namespace. Update inventory.h to remove the private static methods and use the new module instead. Update CMakeLists.txt to compile the new source file.",
+            "files": ["include/stringUtils.h", "src/stringUtils.cpp", "include/inventory.h", "src/inventory.cpp", "CMakeLists.txt"],
+            "test_command": "cd build && cmake .. && cmake --build . && ctest --output-on-failure",
+            "expected_fix": "Create stringUtils.h with namespace StringUtils containing toLower() and trim(). Create stringUtils.cpp with implementations. Remove the private static methods from Inventory and replace calls with StringUtils::toLower() and StringUtils::trim(). Add stringUtils.cpp to CMakeLists.txt.",
+            "difficulty": "medium",
+            "failing_tests": []
+        }
+    ]
+}

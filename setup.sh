@@ -31,7 +31,7 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
-BRANCH_NAME=""
+BRANCH_NAME=""  
 CLEAN=0
 
 # Parse arguments
@@ -149,7 +149,5 @@ echo -e "  Branch:   ${BLUE}$BRANCH_NAME${NC}"
 echo -e "  Baseline: ${BLUE}${BASELINE_COMMIT:0:8}${NC} (main)"
 echo ""
 echo "The agent can now make changes and commit to this branch."
-echo "Run tests to see the intentional bugs:"
-echo "  python3 -m unittest python/calculator/test_calculator.py"
-echo "  cd cpp/linked_list && g++ -std=c++17 -o test test_linked_list.cpp linked_list.cpp && ./test"
-echo "  node javascript/task_manager/taskManager.test.js"
+echo "Build and run tests:"
+echo "  mkdir -p build && cd build && cmake .. && cmake --build . && ctest --output-on-failure"

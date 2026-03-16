@@ -1,12 +1,7 @@
 # Build artifacts
+build/
 *.o
 *.exe
-test_ll
-test_su
-
-# Python
-__pycache__/
-*.pyc
 
 # Cronus state (created at runtime)
 .cronus/
